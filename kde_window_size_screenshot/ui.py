@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog,
     QFormLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QMainWindow,
@@ -13,7 +14,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget, QMenu,
 )
 
-from .environment import capture_block_reason, inspect_environment
+from .environment import CheckState, capture_block_reason, inspect_environment
+from .resources import asset_path
 from .settings import SettingsStore
 
 
@@ -27,7 +29,7 @@ class MainWindow(QMainWindow):
         self.store = store
         self.settings_window: SettingsWindow | None = None
         self.setWindowTitle("KDE Window Size Screenshot")
-        self.setFixedWidth(360)
+        self.setMinimumSize(320, 160)
 
         central = QWidget()
         layout = QVBoxLayout(central)
@@ -58,6 +60,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.shortcut_label)
         layout.addWidget(self.last_result)
         self.setCentralWidget(central)
+        self.adjustSize()
+        self.resize(max(360, self.sizeHint().width()), max(180, self.sizeHint().height()))
         self._refresh_shortcut()
         self._setup_tray()
 
@@ -65,6 +69,7 @@ class MainWindow(QMainWindow):
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
         self.tray = QSystemTrayIcon(self)
+        self.tray.setIcon(QIcon(str(asset_path("icon512.png"))))
         self.tray.setToolTip("KDE Window Size Screenshot")
         menu = QMenu()
         capture_action = menu.addAction("Capture")
@@ -283,9 +288,9 @@ class SettingsWindow(QMainWindow):
         _, layout = self._page("System")
         self.checks = inspect_environment()
         for check in self.checks:
-            mark = "✓" if check.ok else "✗"
+            mark = {CheckState.PASS: "✓", CheckState.FAIL: "✗", CheckState.PENDING: "…"}[check.state]
             layout.addRow(QLabel(f"{mark}  {check.name}"), QLabel(check.detail))
-        report = "\n".join(f"{'OK' if c.ok else 'CHECK'} | {c.name} | {c.detail}" for c in self.checks)
+        report = "\n".join(f"{c.state.value} | {c.name} | {c.detail}" for c in self.checks)
         copy_button = QPushButton("Copy diagnostic report")
         copy_button.clicked.connect(lambda: QApplication.clipboard().setText(report))
         layout.addRow("", copy_button)

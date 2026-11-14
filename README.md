@@ -21,6 +21,6 @@ Pushing a version tag such as `v0.1.0` publishes the matching version Release. B
 
 ## Current safety boundary
 
-The app detects Wayland and missing host tools, but does not move windows or change monitor configuration. Capture remains blocked until the manual Kubuntu/X11 feasibility checklist in [`spec/ACCEPTANCE.md`](spec/ACCEPTANCE.md) is verified.
+The app checks the desktop session, live X11 display connection, required host tools, and whether a nested X server candidate is installed. These checks are passive: they do not move windows or change monitor configuration, and they do not claim that isolation is safe. Capture remains blocked until the manual Kubuntu/X11 feasibility checklist in [`spec/ACCEPTANCE.md`](spec/ACCEPTANCE.md) is verified.
 
 See [`spec/`](spec/README.md) for the product and technical specifications.

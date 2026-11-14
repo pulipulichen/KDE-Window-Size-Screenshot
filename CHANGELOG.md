@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- Use `assets/icon512.png` consistently for the application window, system tray, PyInstaller executable, and AppImage desktop integration.
+- Set a compact, content-based initial main-window size while keeping the window resizable.
+- Replace the placeholder environment summary with passive X11 connection, required-command, and nested-server availability checks. The isolated-display safety gate remains pending until manual target-machine evidence is complete.
+
 ## 2026-11-14 — Publish successful main builds to Releases
 
 - Diagnosed successful run #4 (43608521689), commit a5e51fccc1cb0dfaddaa1e5b2e9c0db9e0d7ed96: https://github.com/pulipulichen/KDE-Window-Size-Screenshot/actions/runs/43608521689
