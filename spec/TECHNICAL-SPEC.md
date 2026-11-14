@@ -70,7 +70,7 @@ UI 不直接執行顯示器或視窗管理命令。所有工作透過 Capture Co
 建議責任：
 
 - EnvironmentChecker：確認 X11 工作階段及必要工具。
-- WindowInspector：取得 Window ID、視窗幾何與狀態。
+- WindowInspector：取得 Window ID、視窗幾何與狀態；必須區分 window-manager frame window 與應用程式 client window，不可假設 `wmctrl` 回傳的 ID 就是 Client Area drawable。
 - WindowPickerBackend：定位滑鼠所在視窗、排除不應選取的視窗。
 - VirtualDisplayBackend：建立、驗證及移除隔離顯示資源。
 - WindowPlacement：在已驗證的隔離環境中安排目標視窗。
@@ -304,7 +304,7 @@ Profile 切換不得讓尚未 Apply 的修改意外遺失。
 
 1. 能否在不改變主要桌面的情況下建立隔離顯示區？
 2. 如何讓既有 X11 視窗在隔離顯示環境中呈現與操作？
-3. 如何可靠識別 X11 Client Area 的實際幾何與 drawable，避免將 KWin 標題列、邊框或陰影納入輸出？
+3. 如何可靠識別 X11 應用程式 client window、其 drawable 與實際 Client Area 幾何，並避免誤用 window-manager frame window 或將 KWin 標題列、邊框、陰影納入輸出？
 4. 哪種 X11 工具組合能可靠保存及恢復 monitor、desktop 與 window state？
 5. 快捷鍵衝突如何透過 KDE 支援的機制可靠偵測？
 6. AppImage 所需的系統端 X11/KDE 依賴清單為何？
