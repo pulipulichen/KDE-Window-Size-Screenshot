@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
         self.shortcut_label.setText(f"Shortcut: {self.store.data.get('shortcut', 'Shift+Print')}")
 
     def capture(self) -> None:
-        reason = capture_block_reason()
+        reason = capture_block_reason(QApplication.platformName())
         self.last_result.setText("Last capture: blocked — safety gate pending")
         QMessageBox.information(self, "Capture unavailable", reason)
 
@@ -288,7 +288,7 @@ class SettingsWindow(QMainWindow):
 
     def _build_system(self) -> None:
         _, layout = self._page("System")
-        self.checks = inspect_environment()
+        self.checks = inspect_environment(QApplication.platformName())
         for check in self.checks:
             mark = {CheckState.PASS: "✓", CheckState.FAIL: "✗", CheckState.PENDING: "…"}[check.state]
             layout.addRow(QLabel(f"{mark}  {check.name}"), QLabel(check.detail))

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
@@ -26,7 +27,9 @@ def main() -> int:
     store = SettingsStore()
     window = MainWindow(store)
     window.setWindowIcon(app_icon)
-    window.showNormal()
+    window.show()
+    # KWin may restore a previous maximized state for this window class at map time.
+    QTimer.singleShot(250, window.showNormal)
     return app.exec()
 
 

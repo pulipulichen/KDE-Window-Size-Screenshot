@@ -24,6 +24,23 @@ class Check:
         return self.state is CheckState.PASS
 
 
+def _desktop_session(platform_name: str | None = None) -> tuple[str, str]:
+    platform = (platform_name or "").strip().lower()
+    if platform == "xcb":
+        return "x11", "Qt platform xcb"
+    if platform == "wayland":
+        return "wayland", "Qt platform wayland"
+    if platform:
+        return platform, f"Qt platform {platform}"
+
+    session = os.environ.get("XDG_SESSION_TYPE", "unknown").strip().lower() or "unknown"
+    if session in {"x11", "wayland"}:
+        return session, f"XDG_SESSION_TYPE={session}"
+    if os.environ.get("DISPLAY"):
+        return "x11", "X11 DISPLAY is set (XDG_SESSION_TYPE is unavailable)"
+    return session, f"XDG_SESSION_TYPE={session}"
+
+
 def _check_display() -> Check:
     display = os.environ.get("DISPLAY", "").strip()
     if not display:
@@ -51,12 +68,12 @@ def _check_display() -> Check:
     return Check("DISPLAY connection", CheckState.FAIL, f"{display}; {detail}")
 
 
-def inspect_environment() -> list[Check]:
+def inspect_environment(platform_name: str | None = None) -> list[Check]:
     """Run passive preflight checks. This never creates or changes display resources."""
-    session = os.environ.get("XDG_SESSION_TYPE", "unknown").strip().lower() or "unknown"
+    session, session_detail = _desktop_session(platform_name)
     session_state = CheckState.PASS if session == "x11" else CheckState.FAIL
     checks = [
-        Check("Desktop session", session_state, f"{session} (this release requires X11)"),
+        Check("Desktop session", session_state, f"{session}; {session_detail} (this release requires X11)"),
         _check_display(),
     ]
 
@@ -89,8 +106,8 @@ def inspect_environment() -> list[Check]:
     return checks
 
 
-def capture_block_reason() -> str:
-    session = os.environ.get("XDG_SESSION_TYPE", "unknown").lower()
+def capture_block_reason(platform_name: str | None = None) -> str:
+    session, _session_detail = _desktop_session(platform_name)
     if session != "x11":
         if session == "wayland":
             return "Wayland 目前不支援截圖。請使用 KDE X11 工作階段。"
