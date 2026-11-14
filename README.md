@@ -15,7 +15,9 @@ python -m kde_window_size_screenshot
 
 ## Build and release
 
-GitHub Actions builds an AppImage on pushes to `main`. Pushing a version tag such as `v0.1.0` builds the AppImage and attaches it to a GitHub Release. The Actions build is not the release download location.
+GitHub Actions builds and publishes an AppImage on pushes to `main` and manual runs on `main`. Each successful build creates a unique development prerelease named `dev-<run>-<attempt>-<commit>`, with the AppImage and its SHA-256 checksum. Download development builds from [GitHub Releases](https://github.com/pulipulichen/KDE-Window-Size-Screenshot/releases), including prereleases.
+
+Pushing a version tag such as `v0.1.0` publishes the matching version Release. Build outputs are uploaded directly to Releases, without Actions artifacts. Development builds retain the safety limitation described above.
 
 ## Current safety boundary
 
