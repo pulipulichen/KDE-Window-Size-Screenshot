@@ -101,7 +101,7 @@ def inspect_environment(platform_name: str | None = None) -> list[Check]:
     checks.append(Check(
         "Isolated display safety gate",
         CheckState.PENDING,
-        "Manual Kubuntu 24.04 KDE X11 evidence is incomplete; capture remains blocked. Passive checks do not verify window isolation.",
+        "Prior tests proved capture and normal restoration. Still unverified: no desktop/output or unrelated-window changes during capture, and cleanup after an induced failure. Capture remains blocked under the current safety criteria.",
     ))
     return checks
 
