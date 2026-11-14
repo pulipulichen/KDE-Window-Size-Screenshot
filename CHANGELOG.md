@@ -8,4 +8,6 @@
 - Use the same metadata for the AppImage filename and Release tag; require nonempty output and upload its verified SHA-256 checksum. Missing assets fail the workflow instead of silently producing an empty Release. Existing release assets are not overwritten.
 - Keep build products on the runner until direct Release upload; no Actions artifacts are used.
 - Update README download instructions and retain the current application safety limitation in release notes.
-- Validation: pending workflow execution and Release asset verification; to be updated after the publishing run.
+- Validation: YAML structure, shell syntax, git diff whitespace checks, and release metadata checks for main/version tags passed. Run #5 (43609111820) succeeded for commit 8bfc6d91cf9b9b0d615ea29a75c717b4befbb7d1: https://github.com/pulipulichen/KDE-Window-Size-Screenshot/actions/runs/43609111820
+- Verified published prerelease https://github.com/pulipulichen/KDE-Window-Size-Screenshot/releases/tag/dev-5-1-8bfc6d9 contains a 78,329,024-byte AppImage and a 125-byte SHA-256 file. Downloaded both from Releases and sha256sum --check returned OK. The run has zero Actions artifacts.
+- Version-tag metadata was checked locally; an actual stable-tag publishing run was not performed. Application desktop/capture validation remains outside this release-workflow fix.
