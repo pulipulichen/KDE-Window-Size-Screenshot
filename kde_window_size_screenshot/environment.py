@@ -115,4 +115,4 @@ def capture_block_reason(platform_name: str | None = None) -> str:
     display_check = _check_display()
     if display_check.state is not CheckState.PASS:
         return f"X11 顯示連線檢查未通過：{display_check.detail}。"
-    return "隔離式虛擬顯示尚未完成 Kubuntu 24.04 實機安全驗證，因此目前不會移動視窗或變更螢幕設定。"
+    return "X11 連線正常；先前已成功截圖並在正常結束後復原。尚未確認截圖期間桌面與其他視窗不變，也未測試中途失敗後清理，因此安全閘門仍封鎖截圖。"
