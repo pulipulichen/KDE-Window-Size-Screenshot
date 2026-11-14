@@ -5,8 +5,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt, QThread, Signal, QStandardPaths
+from PySide6.QtGui import QIcon, QImage
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog,
     QFormLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QMainWindow,
@@ -17,6 +17,28 @@ from PySide6.QtWidgets import (
 from .environment import CheckState, capture_block_reason, inspect_environment
 from .resources import asset_path
 from .settings import SettingsStore
+from .capture import WindowCapture, save_png
+
+
+class CaptureJob(QThread):
+    progress = Signal(str)
+    completed = Signal(bytes, str)
+    failed = Signal(str)
+
+    def __init__(self, width: int, height: int, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.width, self.height = width, height
+
+    def run(self) -> None:
+        try:
+            root = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation))
+            backend = WindowCapture(root / "recovery")
+            self.progress.emit("請點選要截圖的視窗…")
+            wid = backend.select()
+            png, title = backend.capture(wid, self.width, self.height, self.progress.emit)
+            self.completed.emit(png, title)
+        except Exception as exc:
+            self.failed.emit(str(exc))
 
 
 def profile_label(profile: dict[str, Any]) -> str:
@@ -117,9 +139,51 @@ class MainWindow(QMainWindow):
         self.shortcut_label.setText(f"Shortcut: {self.store.data.get('shortcut', 'Shift+Print')}")
 
     def capture(self) -> None:
+        if getattr(self, "capture_job", None) is not None:
+            return
         reason = capture_block_reason(QApplication.platformName())
-        self.last_result.setText("Last capture: blocked — safety gate pending")
-        QMessageBox.information(self, "Capture unavailable", reason)
+        if reason:
+            QMessageBox.warning(self, "Capture unavailable", reason)
+            return
+        profile = next(p for p in self.store.data["profiles"] if p["id"] == self.profile_combo.currentData())
+        self.capture_options = copy.deepcopy(self.store.data)
+        self.capture_button.setEnabled(False)
+        self.hide()
+        self.capture_job = CaptureJob(int(profile["width"]), int(profile["height"]), self)
+        self.capture_job.progress.connect(self.last_result.setText)
+        self.capture_job.completed.connect(self._capture_completed)
+        self.capture_job.failed.connect(self._capture_failed)
+        self.capture_job.finished.connect(self._capture_finished)
+        self.capture_job.start()
+
+    def _capture_completed(self, png: bytes, title: str) -> None:
+        image = QImage.fromData(png, "PNG")
+        if image.isNull():
+            self._capture_failed("無法解碼截圖 PNG。")
+            return
+        results = []
+        if self.capture_options["save_png"]:
+            try:
+                path = save_png(Path(self.capture_options["output_directory"]).expanduser(), title, png)
+                results.append(f"PNG: {path}")
+            except Exception as exc:
+                results.append(f"PNG 儲存失敗：{exc}")
+        if self.capture_options["copy_clipboard"]:
+            QApplication.clipboard().setImage(image)
+            results.append("已複製到剪貼簿")
+        self.last_result.setText(f"{image.width()} × {image.height()} — " + "；".join(results))
+
+    def _capture_failed(self, reason: str) -> None:
+        self.last_result.setText(f"截圖未完成：{reason}")
+        self.showNormal()
+        QMessageBox.warning(self, "Capture", reason)
+
+    def _capture_finished(self) -> None:
+        job = self.capture_job
+        self.capture_job = None
+        job.deleteLater()
+        self.capture_button.setEnabled(True)
+        self.showNormal()
 
     def open_settings(self) -> None:
         if self.settings_window is None:
@@ -134,6 +198,9 @@ class MainWindow(QMainWindow):
         self._refresh_shortcut()
 
     def closeEvent(self, event: Any) -> None:
+        if getattr(self, "capture_job", None) is not None:
+            event.ignore()
+            return
         QApplication.quit()
         event.accept()
 
@@ -308,7 +375,7 @@ class SettingsWindow(QMainWindow):
         except (ValueError, OSError) as exc:
             QMessageBox.warning(self, "Settings not applied", str(exc)); return
         self.settings_applied.emit()
-        QMessageBox.information(self, "Settings applied", "設定已保存。截圖功能仍受隔離顯示安全閘門保護。")
+        QMessageBox.information(self, "Settings applied", "設定已保存。")
 
     def cancel(self) -> None:
         self.working = copy.deepcopy(self.store.data)

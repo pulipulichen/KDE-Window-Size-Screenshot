@@ -77,7 +77,7 @@ def inspect_environment(platform_name: str | None = None) -> list[Check]:
         _check_display(),
     ]
 
-    required_commands = ("xrandr", "xwininfo", "xprop", "xdotool", "wmctrl")
+    required_commands = ("xrandr", "xwininfo", "xprop", "xdotool", "wmctrl", "xwd", "convert")
     for command in required_commands:
         path = shutil.which(command)
         if path and os.access(path, os.X_OK):
@@ -87,22 +87,6 @@ def inspect_environment(platform_name: str | None = None) -> list[Check]:
         else:
             checks.append(Check(command, CheckState.FAIL, "not installed or not on PATH"))
 
-    candidates = [(name, shutil.which(name)) for name in ("Xephyr", "Xvfb")]
-    available = [f"{name}: {path}" for name, path in candidates if path and os.access(path, os.X_OK)]
-    if available:
-        checks.append(Check(
-            "Nested X server candidate",
-            CheckState.PENDING,
-            "; ".join(available) + ". Runtime dependencies, permissions, and launch conditions are untested; preflight does not start a server.",
-        ))
-    else:
-        checks.append(Check("Nested X server candidate", CheckState.FAIL, "Neither executable Xephyr nor Xvfb is installed"))
-
-    checks.append(Check(
-        "Isolated display safety gate",
-        CheckState.PENDING,
-        "Prior tests proved capture and normal restoration. Still unverified: no desktop/output or unrelated-window changes during capture, and cleanup after an induced failure. Capture remains blocked under the current safety criteria.",
-    ))
     return checks
 
 
@@ -115,4 +99,7 @@ def capture_block_reason(platform_name: str | None = None) -> str:
     display_check = _check_display()
     if display_check.state is not CheckState.PASS:
         return f"X11 顯示連線檢查未通過：{display_check.detail}。"
-    return "X11 連線正常；先前已成功截圖並在正常結束後復原。尚未確認截圖期間桌面與其他視窗不變，也未測試中途失敗後清理，因此安全閘門仍封鎖截圖。"
+    missing = [c.name for c in inspect_environment(platform_name) if c.state is CheckState.FAIL]
+    if missing:
+        return "缺少必要工具：" + ", ".join(missing)
+    return ""

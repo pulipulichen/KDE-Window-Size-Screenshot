@@ -1,44 +1,44 @@
 # Implementation Status
 
-## Phase 1 — isolated display safety gate
+## 2026-11-15 — Capture enabled; isolation gate removed
 
-Status: **NOT VERIFIED — capture must remain disabled**.
+The user's latest decision replaces the old isolated-display acceptance gate. Capture no longer requests isolation confirmation, checks a verification flag, or requires Xephyr/Xvfb. Basic X11 connection and executable checks identify real dependency errors.
 
-### Passive preflight implementation
+The previously successful workflow is now wired to Capture Window:
 
-Settings → System now reports individual `PASS`, `FAIL`, or `PENDING` results. It identifies X11/Wayland from Qt's active platform (`xcb`/`wayland`), falling back to session environment values when needed; this also works when a remote launch does not inherit `XDG_SESSION_TYPE`. It attempts a read-only `xrandr --query` against the current `DISPLAY`, checks that required commands are executable, and reports whether Xephyr or Xvfb is installed. The checks do not start nested servers, move windows, or change RandR state. A successful display connection or the presence of Xephyr is not treated as proof of isolation.
+1. Hide the quick window and select a managed application client with the X11 crosshair picker.
+2. Save the original geometry and maximized/fullscreen/shaded state to a private recovery JSON.
+3. Remove those states, dynamically select a sufficiently large existing monitor, and move/resize the target.
+4. Read the client drawable with `xwd`; convert to PNG with ImageMagick. Respect advertised `_GTK_FRAME_EXTENTS` when resizing/cropping CSD shadows, without scaling the image.
+5. Restore the target in `finally`, verify geometry/state, retry restoration on failure, and retain the JSON if recovery still fails.
+6. Decode the PNG, save it without overwriting an existing file and/or copy it to the Qt clipboard. Output errors are reported separately.
 
-### Target-machine observation (2026-11-15)
+The workflow does not issue RandR mutations or create nested X servers. It temporarily moves/resizes the selected target on an existing display area. This is not described as isolated display rendering.
 
-Earlier functional testing on the target machine did capture the existing “布丁FB - Facebook” window at 1280 × 800, then returned the desktop to six outputs and 4480 × 1800 and restored the target window's prior position, size, and maximized state. That proves the capture path can work and the normal completion path restored the observed state. It used `xrandr` to expand the desktop beyond its original 4480-pixel width (the root screen reached 10624 × 1800) and temporarily moved/resized the target window, so it does not prove a no-layout-change isolated display. The retrieved test record also does not verify unrelated windows before/after or cleanup after an induced failure.
+## Target-machine validation
 
-Read-only inspection on 2026-11-15 confirmed Ubuntu 24.04.3 LTS, an active X11 session on `:0`, and an X screen size of 4480 × 1800 with multiple connected outputs. `Xephyr` is installed; `Xvfb` is not. No display resource or window was changed during this inspection. The stricter no-layout-change isolation experiment and failure-cleanup evidence are still incomplete, so the gate remains pending under the current acceptance criteria.
+On 2026-11-15, tested the backend over SSH on `pudding-rog-2025`, Kubuntu 24.04 KDE X11, `DISPLAY=:0`, using a newly created disposable `xmessage` window rather than an existing user window. Six monitors were present, including the previously used HDMI-2-3 1920 × 1080 area. The backend selected a fitting monitor dynamically.
 
-Required manual evidence on Kubuntu 24.04 / KDE Plasma / X11:
+- Normal window: produced a decodable XWD-converted PNG with a 1280 × 800 IHDR; original geometry restored.
+- Maximized window: produced 1280 × 800; original geometry and both maximization flags restored.
+- Fullscreen plus maximized window: produced 1280 × 800; original geometry and fullscreen/maximization flags restored.
+- Injected `xwd` failure: the intentional error propagated; original geometry and states restored.
+- `xrandr --query` was identical before and after all four cases. The successful test series left no pending recovery snapshots. The disposable test window was terminated.
 
-- [ ] Record the X11 session and target window identifiers.
-- [ ] Establish an isolated display without changing primary output mode or desktop layout.
-- [ ] Confirm the desktop does not jump and unrelated windows retain position and size.
-- [ ] Confirm an existing target window can be presented and controlled in that isolated display.
-- [ ] Remove the temporary resources and compare the display/window state with the before snapshot.
-- [ ] Repeat cleanup after a deliberately interrupted/failed attempt.
-- [ ] Attach command output, display snapshots, and recovery notes to this file before enabling capture.
+An initial test found that restoring fullscreen before maximization made KWin drop a state flag. Restoring maximization first and fullscreen last fixed the issue; the full series passed afterward.
 
-The current application performs passive checks and reports this gate as pending. It never invokes a window move, RandR mutation, or screenshot operation. At startup it explicitly requests a normal window state and reapplies a compact size after KWin maps the window, to clear a restored maximized or oversized state for the app's window class.
+This validates the backend on the target KWin session, not the entire packaged GUI. Chrome-specific visual validation of client shadow extents and issue #1 black edges is still pending. The AppImage's picker/output flow and clipboard should still be checked interactively. No new acceptance gate is imposed for those pending checks.
 
-## Implemented scaffold
+## Other implemented features
 
-- PySide6 quick window and independent Settings window.
-- Profile working copy, validation, Apply/Cancel, and JSON persistence.
-- Output settings and diagnostic report copy action.
-- X11/Wayland, live X display connection, host-command, and nested-server-candidate checks.
-- `assets/icon512.png` is the single application icon source for the window, system tray, and AppImage integration.
-- The main window starts at a compact content-based size and remains resizable.
-- GitHub Actions AppImage build on `main`, plus GitHub Release attachment for `v*` tags.
+- PySide6 quick window, independent Settings, profile working copies and persistence.
+- PNG/clipboard options and actual capture outputs.
+- Passive X11/Wayland, display connection and command diagnostics.
+- Shared icon and compact startup geometry.
+- GitHub Actions AppImage builds published directly to Releases.
 
-## Deferred until the gate passes
+## Remaining UI work
 
-- Window picker and global shortcut registration.
-- Window state snapshot and restoration backend.
-- Exact client-area capture.
-- Clipboard/PNG output from a real capture.
+- Global shortcut registration/conflict checking.
+- Hover highlight and immediate Escape cancellation in a custom picker (current crosshair selection has a timeout).
+- Separate progress dialog and rolling execution logs.

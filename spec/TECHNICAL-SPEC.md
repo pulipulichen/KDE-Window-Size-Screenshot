@@ -2,13 +2,9 @@
 
 ## 1. 技術狀態與限制
 
-本文件描述目標架構與安全約束，不代表所有技術路徑已經實機驗證。
+2026-11-15 使用者修正：移除隔離顯示安全閘門與人工確認限制，直接沿用先前成功的 X11 指定尺寸截圖流程。一般 X11 連線與工具檢查仍用來回報實際缺少的依賴，不要求 Xephyr、Xvfb 或額外驗證標記。
 
-目前最高風險是：能否建立不干擾主要 KDE 桌面的隔離式虛擬顯示環境，並在其中操作已存在於使用者桌面上的目標視窗。
-
-在技術驗證通過前，不得宣稱此能力已實作，也不得以一般 RandR 畫面延伸或改變主螢幕排列的方式冒充隔離顯示。
-
-若無法證明安全，必須停止後續截圖流程。
+採用既有顯示區 → 解除目標視窗最大化／全螢幕 → 調整 Client Area → xwd → ImageMagick PNG → 還原目標視窗。動態偵測顯示區，不固定 HDMI 輸出名稱或座標。這是既有桌面上的視窗操作，不宣稱獨立顯示隔離。
 
 ## 2. 目標技術堆疊
 
@@ -72,8 +68,8 @@ UI 不直接執行顯示器或視窗管理命令。所有工作透過 Capture Co
 - EnvironmentChecker：確認 X11 工作階段及必要工具。
 - WindowInspector：取得 Window ID、視窗幾何與狀態；必須區分 window-manager frame window 與應用程式 client window，不可假設 `wmctrl` 回傳的 ID 就是 Client Area drawable。
 - WindowPickerBackend：定位滑鼠所在視窗、排除不應選取的視窗。
-- VirtualDisplayBackend：建立、驗證及移除隔離顯示資源。
-- WindowPlacement：在已驗證的隔離環境中安排目標視窗。
+- DisplayInspector：查詢可容納指定尺寸的既有顯示區。
+- WindowPlacement：在既有顯示區安排目標視窗。
 - ScreenshotBackend：只擷取應用程式 Client Area，不包含 KWin 標題列、視窗邊框或陰影。
 - RestoreBackend：恢復原始視窗與桌面狀態。
 
@@ -91,7 +87,7 @@ UI 不直接執行顯示器或視窗管理命令。所有工作透過 Capture Co
 2. PREFLIGHT
 3. TARGET_LOCKED
 4. SNAPSHOT_SAVED
-5. ISOLATED_DISPLAY_READY
+5. DISPLAY_SELECTED
 6. WINDOW_PREPARED
 7. CAPTURING
 8. OUTPUT_WRITING
@@ -109,7 +105,7 @@ UI 不直接執行顯示器或視窗管理命令。所有工作透過 Capture Co
 
 - 確認目前工作階段為 X11。
 - 檢查必要系統指令。
-- 檢查虛擬顯示能力。
+- 動態查詢既有顯示區。
 - 確認目標視窗仍存在。
 - 確認目標 Profile 尺寸合法。
 - 確認至少啟用一種輸出方式。
@@ -141,22 +137,9 @@ WindowPicker 必須排除自身視窗、進度視窗、系統匣 popup 及其他
 
 狀態快照必須先成功保存，才允許進入可能改變桌面狀態的步驟。
 
-### 4.5 Isolated Display Gate
+### 4.5 Existing Display Placement（取代 Isolated Display Gate）
 
-隔離式虛擬顯示是第一版核心技術閘門。
-
-必須證明：
-
-- 建立隔離顯示不會改變主要螢幕解析度。
-- 不會改變主要桌面排列。
-- 不會使使用者桌面跳動。
-- 不會改變其他視窗的位置或尺寸。
-- 能在隔離環境中操作本次目標視窗。
-- 完成後能完整移除新增資源。
-
-不可假設獨立 X Server 可以直接操作另一個 X Server 中已存在的 Window ID。不可假設建立 RandR monitor 就等於建立獨立顯示伺服器。這些方案必須分別驗證其實際隔離能力。
-
-若無法滿足以上條件，停止 Phase 1，不得繼續使用會改動主要桌面的方案。
+不再使用隔離驗證作為截圖開關。透過 `xrandr --listmonitors` 動態選擇容納目標 Client Area 與裝飾的既有顯示區，再以 `wmctrl` 操作目標視窗。只查詢 RandR，不新增輸出、不改解析度或螢幕排列。放不下尺寸時顯示實際原因。
 
 ### 4.6 Capture
 

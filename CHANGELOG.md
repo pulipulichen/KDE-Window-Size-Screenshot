@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### 2026-11-15 — Use the working X11 capture flow
+
+- Remove the permanent isolation safety gate and nested-server requirement following the user's updated decision.
+- Connect Capture Window to selection, existing-monitor placement, client resizing, XWD/PNG capture, clipboard/file output, and verified restoration on success/failure.
+- Dynamically discover display geometry; preserve recovery snapshots on restore failure and retry restoration.
+- Target-machine backend tests passed for normal, maximized, fullscreen and induced capture-failure cases at 1280 × 800. Fixed KWin restore ordering (fullscreen last). Display configuration stayed unchanged.
+- Update specifications and Release notes to supersede the old gate. Chrome visual edge checks and full packaged UI acceptance remain pending; capture is enabled.
+
 - Use `assets/icon512.png` consistently for the application window, system tray, PyInstaller executable, and AppImage desktop integration.
 - Set a compact, content-based initial main-window size while keeping the window resizable.
 - Replace the placeholder environment summary with passive X11 connection, required-command, and nested-server availability checks. The isolated-display safety gate remains pending until manual target-machine evidence is complete.
