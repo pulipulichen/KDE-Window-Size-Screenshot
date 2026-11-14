@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         self.settings_window: SettingsWindow | None = None
         self.setWindowTitle("KDE Window Size Screenshot")
         self.setMinimumSize(320, 160)
+        self.setWindowState(Qt.WindowState.WindowNoState)
 
         central = QWidget()
         layout = QVBoxLayout(central)
@@ -59,6 +60,7 @@ class MainWindow(QMainWindow):
         self.last_result.setWordWrap(True)
         layout.addWidget(self.shortcut_label)
         layout.addWidget(self.last_result)
+        layout.addStretch(1)
         self.setCentralWidget(central)
         self.adjustSize()
         self.resize(max(360, self.sizeHint().width()), max(180, self.sizeHint().height()))

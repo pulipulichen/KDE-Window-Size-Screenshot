@@ -25,7 +25,7 @@ def main() -> int:
     store = SettingsStore()
     window = MainWindow(store)
     window.setWindowIcon(app_icon)
-    window.show()
+    window.showNormal()
     return app.exec()
 
 
