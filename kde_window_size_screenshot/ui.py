@@ -126,6 +126,10 @@ class MainWindow(QMainWindow):
         self.refresh_profiles()
         self._refresh_shortcut()
 
+    def closeEvent(self, event: Any) -> None:
+        QApplication.quit()
+        event.accept()
+
 
 class SettingsWindow(QMainWindow):
     from PySide6.QtCore import Signal
