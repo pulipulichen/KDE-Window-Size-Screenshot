@@ -28,8 +28,14 @@ def main() -> int:
     window = MainWindow(store)
     window.setWindowIcon(app_icon)
     window.show()
-    # KWin may restore a previous maximized state for this window class at map time.
-    QTimer.singleShot(250, window.showNormal)
+
+    def restore_compact_startup_geometry() -> None:
+        # KWin may restore an old maximized state or size for this window class at map time.
+        window.showNormal()
+        hint = window.sizeHint()
+        window.resize(max(360, hint.width()), max(180, hint.height()))
+
+    QTimer.singleShot(250, restore_compact_startup_geometry)
     return app.exec()
 
 
