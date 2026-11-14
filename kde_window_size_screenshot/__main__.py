@@ -14,6 +14,7 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("KDE Window Size Screenshot")
     app.setApplicationDisplayName("KDE Window Size Screenshot")
+    app.setDesktopFileName("KDE-Window-Size-Screenshot")
     app.setOrganizationName("PuliPuli")
     app_icon = QIcon(str(asset_path("icon512.png")))
     app.setWindowIcon(app_icon)
