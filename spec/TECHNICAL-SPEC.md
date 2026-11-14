@@ -74,7 +74,7 @@ UI 不直接執行顯示器或視窗管理命令。所有工作透過 Capture Co
 - WindowPickerBackend：定位滑鼠所在視窗、排除不應選取的視窗。
 - VirtualDisplayBackend：建立、驗證及移除隔離顯示資源。
 - WindowPlacement：在已驗證的隔離環境中安排目標視窗。
-- ScreenshotBackend：擷取完整視窗影像。
+- ScreenshotBackend：只擷取應用程式 Client Area，不包含 KWin 標題列、視窗邊框或陰影。
 - RestoreBackend：恢復原始視窗與桌面狀態。
 
 實際使用哪些 X11/RandR/X server 工具，必須由可行性實驗決定，不得在未驗證前固定假設。
@@ -160,11 +160,11 @@ WindowPicker 必須排除自身視窗、進度視窗、系統匣 popup 及其他
 
 ### 4.6 Capture
 
-擷取範圍包含標題列與邊框。最終 PNG 的寬高必須精確等於 Profile。
+擷取範圍限定為應用程式 Client Area（客戶區／內容區）。不包含 KDE 標題列、視窗邊框、陰影或其他視窗裝飾。
 
-禁止以事後縮放來修正不符合尺寸的影像。
+最終 PNG 的寬高必須精確等於 Profile，Profile 尺寸代表 Client Area 的像素尺寸。
 
-若目標視窗拒絕調整、裝飾無法納入指定尺寸、擷取範圍不完整或輸出尺寸不符，必須視為失敗。
+禁止以事後縮放來修正不符合尺寸的影像。若擷取範圍混入視窗裝飾、漏掉 Client Area 內容、產生非預期黑邊，或輸出尺寸不符，必須視為失敗並保留診斷資訊。
 
 ### 4.7 Restore
 
@@ -204,7 +204,7 @@ WindowPicker 必須排除自身視窗、進度視窗、系統匣 popup 及其他
 - PNG 可正常解碼。
 - 寬度等於 Profile width。
 - 高度等於 Profile height。
-- 影像包含標題列及邊框。
+- 影像只包含應用程式 Client Area，不包含標題列、邊框或陰影。
 - 未經事後縮放。
 - 寫檔成功或剪貼簿寫入成功。
 
@@ -304,7 +304,7 @@ Profile 切換不得讓尚未 Apply 的修改意外遺失。
 
 1. 能否在不改變主要桌面的情況下建立隔離顯示區？
 2. 如何讓既有 X11 視窗在隔離顯示環境中呈現與操作？
-3. KDE 視窗裝飾與指定最終尺寸如何精確協調？
+3. 如何可靠識別 X11 Client Area 的實際幾何與 drawable，避免將 KWin 標題列、邊框或陰影納入輸出？
 4. 哪種 X11 工具組合能可靠保存及恢復 monitor、desktop 與 window state？
 5. 快捷鍵衝突如何透過 KDE 支援的機制可靠偵測？
 6. AppImage 所需的系統端 X11/KDE 依賴清單為何？

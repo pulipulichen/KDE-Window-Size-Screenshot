@@ -9,7 +9,7 @@
 | 1b | Hotkey capture | Shift + Print Screen 直接截取滑鼠所在視窗，不需要再次點擊。 |
 | 2a | Hotkey completion | 自動還原視窗並顯示 KDE 通知，不開啟圖片預覽。 |
 | 3a | GUI capture | 按下 GUI 截圖按鈕後隱藏 GUI，使用滑鼠點選目標視窗。 |
-| 4b | Capture area | 包含視窗標題列與邊框。 |
+| 4b — superseded | Original capture area | 早期選擇包含視窗標題列與邊框；已由後續 Client Area 決策取代。 |
 | 5b | GUI completion | GUI 發起的截圖完成後重新顯示小型主畫面。 |
 
 ## Round 2 — Basic GUI
@@ -72,7 +72,7 @@
 |---|---|---|
 | 31a | Platform scope | 第一版優先支援 X11；Wayland 自動偵測並提示尚未支援。 |
 | 32a | Virtual display | 優先研究獨立虛擬顯示區，必須保證不干擾主要桌面，否則中止。 |
-| 33a | Exact dimensions | 最終 PNG 精確符合指定尺寸，標題列與邊框包含在尺寸內。 |
+| 33a — superseded | Original exact dimensions | 早期選擇將標題列與邊框包含在指定尺寸內；已由後續 Client Area 決策取代。 |
 | 34a | State restoration | 完整保存與恢復位置、尺寸、最大化、全螢幕、所在桌面及螢幕。 |
 | 35a | Concurrency | 單一程式實例，同一時間只允許一個截圖工作。 |
 | 36b | Distribution | 第一版使用 AppImage。 |
@@ -109,9 +109,20 @@
 | 47a | Updates | 從 GitHub Releases 手動下載新版，不提供程式內更新。 |
 | 48c | Formal test method | 只做 Kubuntu 24.04 KDE X11 實機人工測試。 |
 
+## Later correction — Capture area definition
+
+使用者後續明確修正截圖範圍：
+
+- Profile 的寬高代表應用程式 Client Area（客戶區／內容區）的尺寸。
+- 最終 PNG 必須精確符合 Profile 寬高。
+- 不包含 KDE 標題列、視窗邊框、陰影或其他視窗裝飾。
+- 針對 XWD 黑邊的調查仍然有效，但只調查 Client Area 的 drawable、擷取邊界與影像轉換，不再把視窗裝飾當成預期輸出或必須處理的內容。
+- 早期 4b、33a 的「包含標題列與邊框」方案正式失效。
+
 ## Decision precedence
 
 - 所有未被明確取代的決策持續有效。
+- 4b 與 33a 的原始「包含標題列與邊框」方案已被後續 Client Area-only 決策取代。
 - 26a 與 39a 的原始獨立 Dialog / 齒輪管理方案已被後續 Profile inline editing 修正取代。
 - 小型快速操作視窗的齒輪仍保留，僅用來開啟完整 Settings；Settings 的 Profiles 頁面不使用齒輪。
 - 若未來需要變更已確認決策，應新增修訂紀錄，不應靜默改寫歷史決策。
