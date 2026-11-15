@@ -41,6 +41,17 @@ class CaptureRegressionTests(unittest.TestCase):
         added = [args[-1] for args in calls if args[-1].startswith('add,')]
         self.assertEqual(added[-1], 'add,fullscreen')
 
+    def test_restore_allows_slow_chrome_resize(self):
+        saved = Snapshot('0x123', 0, 0, 1920, 1036, [])
+        with patch('kde_window_size_screenshot.capture.run'), \
+             patch('kde_window_size_screenshot.capture.extents', return_value=(0, 0, 0, 0)), \
+             patch('kde_window_size_screenshot.capture.geometry', return_value=(0, 0, 1920, 1036)), \
+             patch('kde_window_size_screenshot.capture.property_text', return_value=''), \
+             patch('kde_window_size_screenshot.capture.time.sleep'), \
+             patch.object(WindowCapture, 'wait_size') as wait_size:
+            WindowCapture(Path('/unused')).restore(saved)
+        wait_size.assert_called_once_with('0x123', 1920, 1036, timeout=8)
+
     def test_output_does_not_overwrite_or_escape_directory(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

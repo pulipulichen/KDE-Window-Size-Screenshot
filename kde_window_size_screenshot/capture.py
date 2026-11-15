@@ -71,7 +71,7 @@ class WindowCapture:
         left, _right, top, _bottom = extents(saved.wid, "_NET_FRAME_EXTENTS")
         run("wmctrl", "-ir", saved.wid, "-e",
             f"0,{saved.x-left},{saved.y-top},{saved.width},{saved.height}")
-        self.wait_size(saved.wid, saved.width, saved.height)
+        self.wait_size(saved.wid, saved.width, saved.height, timeout=8)
         # KWin can clear maximization flags when fullscreen is restored first.
         for state in sorted(saved.states, key=lambda state: state == "fullscreen"):
             run("wmctrl", "-ir", saved.wid, "-b", f"add,{state}")
@@ -85,8 +85,8 @@ class WindowCapture:
         raise RuntimeError("視窗未回到原始位置、尺寸或狀態。")
 
     @staticmethod
-    def wait_size(wid: str, width: int, height: int) -> None:
-        deadline = time.monotonic() + 3
+    def wait_size(wid: str, width: int, height: int, timeout: float = 3) -> None:
+        deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             if geometry(wid)[2:] == (width, height):
                 return

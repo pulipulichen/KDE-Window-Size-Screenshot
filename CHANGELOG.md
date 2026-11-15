@@ -8,7 +8,9 @@
 - Connect Capture Window to selection, existing-monitor placement, client resizing, XWD/PNG capture, clipboard/file output, and verified restoration on success/failure.
 - Dynamically discover display geometry; preserve recovery snapshots on restore failure and retry restoration.
 - Target-machine backend tests passed for normal, maximized, fullscreen and induced capture-failure cases at 1280 × 800. Fixed KWin restore ordering (fullscreen last). Display configuration stayed unchanged.
-- Update specifications and Release notes to supersede the old gate. Chrome visual edge checks and full packaged UI acceptance remain pending; capture is enabled.
+- Allow up to 8 seconds for restoration to the saved geometry to accommodate slower Chrome/KWin resize acknowledgements.
+- On kde-test-env, packaged AppImage GUI capture of the open, maximized Chrome window produced a 1280 × 800 PNG, restored its 1920 × 1036 geometry and maximized state, and removed the recovery snapshot after success.
+- Update specifications and Release notes to supersede the old gate. Chrome visual edge checks remain pending; packaged GUI acceptance is complete.
 
 - Use `assets/icon512.png` consistently for the application window, system tray, PyInstaller executable, and AppImage desktop integration.
 - Set a compact, content-based initial main-window size while keeping the window resizable.
